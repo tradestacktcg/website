@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradeStack — Pokémon TCG Trade Calculator</title>
+  <meta name="description" content="The instant trade calculator for Pokémon TCG collectors. Real market prices and trade values, mid-negotiation. Join the waitlist." />
+  <meta property="og:title" content="TradeStack — Pokémon TCG Trade Calculator" />
+  <meta property="og:description" content="Real market prices. Instant trade values. No mental math." />
+  <meta property="og:url" content="https://tradestacktcg.app" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #090909;
+      --surface: #111111;
+      --elevated: #191919;
+      --border: rgba(255,255,255,0.06);
+      --borderHi: rgba(255,255,255,0.12);
+      --text1: #FFFFFF;
+      --text2: #888888;
+      --text3: #7A7A7A;
+      --accent: #C9FF57;
+      --accentDim: rgba(201,255,87,0.10);
+      --accentText: #0A0A0A;
+      --red: #FF5252;
+      --max: 1100px;
+      --gutter: clamp(20px, 5vw, 48px);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text1);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 14px var(--gutter);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9,9,9,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .logo-img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+
+    .nav-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 100px var(--gutter) 80px;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-content {}
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accentDim);
+      border: 1px solid rgba(201,255,87,0.18);
+      border-radius: 100px;
+      padding: 5px 14px 5px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.1s ease forwards;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      animation: blink 2.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-size: clamp(36px, 5.5vw, 72px);
+      font-weight: 500;
+      line-height: 1.0;
+      letter-spacing: -0.035em;
+      color: var(--text1);
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fadeUp 0.55s 0.2s ease forwards;
+    }
+
+    h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 1.4vw, 18px);
+      color: var(--text2);
+      line-height: 1.65;
+      max-width: 440px;
+      margin-bottom: 40px;
+      font-weight: 400;
+      opacity: 0;
+      animation: fadeUp 0.55s 0.3s ease forwards;
+    }
+
+    /* FORM */
+    .form-wrap {
+      opacity: 0;
+      animation: fadeUp 0.55s 0.4s ease forwards;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 10px;
+      max-width: 440px;
+    }
+
+    .email-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--borderHi);
+      border-radius: 10px;
+      padding: 13px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text1);
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .email-input::placeholder { color: var(--text3); }
+
+    .email-input:focus {
+      border-color: rgba(201,255,87,0.5);
+      box-shadow: 0 0 0 3px rgba(201,255,87,0.06);
+    }
+
+    .submit-btn {
+      background: var(--accent);
+      color: var(--accentText);
+      border: none;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    .submit-btn:hover { opacity: 0.88; }
+    .submit-btn:active { transform: scale(0.97); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .form-note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.02em;
+    }
+
+    .success-msg {
+      display: none;
+      padding: 13px 18px;
+      background: var(--accentDim);
+      border: 1px solid rgba(201,255,87,0.18);
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--accent);
+      max-width: 440px;
+    }
+
+    /* NUMBERS */
+    .numbers {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 60px var(--gutter);
+    }
+
+    .numbers-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+
+    .number-item {
+      padding: 0 48px 0 0;
+    }
+
+    .number-item + .number-item {
+      padding-left: 48px;
+      border-left: 1px solid var(--border);
+    }
+
+    .number-val {
+      font-family: 'DM Mono', monospace;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 10px;
+      letter-spacing: -0.03em;
+    }
+
+    .number-label {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    /* HOW */
+    .how {
+      border-top: 1px solid var(--border);
+      padding: 96px var(--gutter);
+    }
+
+    .how-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .step {
+      padding: 40px 36px;
+      border-right: 1px solid var(--border);
+    }
+
+    .step:last-child { border-right: none; }
+
+    .step-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.06em;
+      margin-bottom: 24px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text1);
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+    }
+
+    .step-desc {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.75;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 40px var(--gutter);
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .footer-logo {
+      height: 28px;
+      width: auto;
+    }
+
+    .footer-contact {
+      font-size: 12px;
+      color: var(--text3);
+      text-decoration: none;
+      font-family: 'DM Mono', monospace;
+      transition: color 0.15s;
+    }
+
+    .footer-contact:hover { color: var(--text2); }
+
+    .social-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .social-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+
+    .social-links a:hover { color: var(--text1); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 56px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .waitlist-form {
+        flex-direction: column;
+        max-width: 100%;
+      }
+      .submit-btn {
+        width: 100%;
+        text-align: center;
+        padding: 15px 20px;
+      }
+      .steps {
+        grid-template-columns: 1fr;
+        border-radius: 12px;
+      }
+      .step {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .step:last-child { border-bottom: none; }
+      .numbers-inner {
+        grid-template-columns: 1fr;
+      }
+      .number-item {
+        padding: 28px 0;
+        border-left: none !important;
+        border-bottom: 1px solid var(--border);
+      }
+      .number-item:last-child { border-bottom: none; padding-bottom: 0; }
+      .number-item:first-child { padding-top: 0; }
+      .how { padding: 64px var(--gutter); }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 28px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding-top: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/"><img class="logo-img" src="data:image/png;base64,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" alt="TradeStack" /></a>
+  <span class="nav-tag">iOS &middot; Coming soon</span>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        Waitlist open
+      </div>
+      <h1>Know the number.<br><em>Close the trade.</em></h1>
+      <p class="hero-sub">
+        TradeStack gives Pokémon TCG collectors real market prices and instant trade values, mid-negotiation. No mental math. No switching apps.
+      </p>
+      <div class="form-wrap">
+        <form
+          class="waitlist-form"
+          id="waitlist-form"
+          action="https://formspree.io/f/YOUR_FORM_ID"
+          method="POST"
+        >
+          <input
+            class="email-input"
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            required
+            autocomplete="email"
+          />
+          <button class="submit-btn" type="submit">Join the waitlist</button>
+        </form>
+        <div class="success-msg" id="success-msg">
+          You're on the list. We'll reach out before launch.
+        </div>
+        <p class="form-note">iOS only &nbsp;&middot;&nbsp; No spam, ever</p>
+      </div>
+    </div>
+</div>
+</section>
+
+<div class="numbers">
+  <div class="numbers-inner">
+    <div class="number-item">
+      <div class="number-val">60&ndash;80%</div>
+      <div class="number-label">Standard collector trade percentage. It's math nobody does fast enough.</div>
+    </div>
+    <div class="number-item">
+      <div class="number-val">&lt;60s</div>
+      <div class="number-label">From cold open to a complete trade build.</div>
+    </div>
+    <div class="number-item">
+      <div class="number-val">0</div>
+      <div class="number-label">Apps that combine card search, condition pricing, and trade math in one place.</div>
+    </div>
+  </div>
+</div>
+
+<section class="how">
+  <div class="how-inner">
+    <p class="section-label">How it works</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3 class="step-title">Search any card</h3>
+        <p class="step-desc">Find by name, set, or number. Select your variant and condition &mdash; raw NM, LP, or graded PSA 10. Real prices from TCGPlayer and eBay completed sales.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3 class="step-title">Build your stack</h3>
+        <p class="step-desc">Add every card you're offering. The running market total updates as you go. Nothing to add up by hand.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3 class="step-title">Set the percentage</h3>
+        <p class="step-desc">Tap 60, 70, 80, 90, or 100%. The trade value and the delta appear instantly. Negotiate from a real number, not a guess.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <img class="footer-logo" src="data:image/png;base64,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" alt="TradeStack" />
+      <a class="footer-contact" href="mailto:tradestacktcg@gmail.com">tradestacktcg@gmail.com</a>
+    </div>
+    <div class="social-links">
+      <a href="https://twitter.com/Tradestack" target="_blank" rel="noopener noreferrer">Twitter</a>
+      <a href="https://instagram.com/tradestack.app" target="_blank" rel="noopener noreferrer">Instagram</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const form = document.getElementById('waitlist-form');
+  const successMsg = document.getElementById('success-msg');
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = form.querySelector('.submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Joining...';
+    const data = new FormData(form);
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        form.style.display = 'none';
+        successMsg.style.display = 'block';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Join the waitlist';
+        alert('Something went wrong. Email us at tradestacktcg@gmail.com to get on the list.');
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Join the waitlist';
+      alert('Something went wrong. Email us at tradestacktcg@gmail.com to get on the list.');
+    }
+  });
+</script>
+
+</body>
+</html>
